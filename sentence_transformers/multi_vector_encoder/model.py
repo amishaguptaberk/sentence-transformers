@@ -553,10 +553,7 @@ class MultiVectorEncoder(BaseModel):
            length is ``document_length``, and skiplist tokens (e.g. punctuation) are excluded from the output.
         """
         if prompt_name is None and prompt is None:
-            for candidate in ("document", "passage", "corpus"):
-                if candidate in self.prompts:
-                    prompt_name = candidate
-                    break
+            prompt_name = self._resolve_document_prompt_name()
 
         return self.encode(
             inputs=inputs,

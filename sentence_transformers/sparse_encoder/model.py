@@ -477,10 +477,7 @@ class SparseEncoder(BaseModel):
                 # (3, 30522)
         """
         if prompt_name is None and prompt is None:
-            for candidate_prompt_name in ["document", "passage", "corpus"]:
-                if candidate_prompt_name in self.prompts:
-                    prompt_name = candidate_prompt_name
-                    break
+            prompt_name = self._resolve_document_prompt_name()
 
         return self.encode(
             inputs=inputs,
