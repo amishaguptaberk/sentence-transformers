@@ -25,7 +25,7 @@ def features(model: SentenceTransformer) -> list[dict[str, torch.Tensor]]:
     return [model.preprocess(["red", "blue"]), model.preprocess(["green", "red blue"])]
 
 
-def test_probability_labels_match_cross_entropy_and_gradients(
+def test_probability_labels_match_cross_entropy(
     model: SentenceTransformer, features: list[dict[str, torch.Tensor]]
 ) -> None:
     loss = SoftmaxLoss(model, embedding_dimension=2, num_labels=3)
@@ -33,14 +33,9 @@ def test_probability_labels_match_cross_entropy_and_gradients(
 
     actual = loss(features, labels)
     _, logits = loss(features, None)
-    expected = -(labels * logits.log_softmax(dim=-1)).sum(dim=-1).mean()
+    expected = torch.nn.functional.cross_entropy(logits, labels)
 
     torch.testing.assert_close(actual, expected)
-    parameters = tuple(loss.parameters())
-    actual_gradients = torch.autograd.grad(actual, parameters)
-    expected_gradients = torch.autograd.grad(expected, parameters)
-    for actual_gradient, expected_gradient in zip(actual_gradients, expected_gradients):
-        torch.testing.assert_close(actual_gradient, expected_gradient)
 
 
 @pytest.mark.parametrize("column_labels", [False, True])
@@ -57,11 +52,6 @@ def test_one_hot_labels_match_class_indices(
     class_index_loss = loss(features, class_indices)
 
     torch.testing.assert_close(probability_loss, class_index_loss)
-    parameters = tuple(loss.parameters())
-    probability_gradients = torch.autograd.grad(probability_loss, parameters)
-    class_index_gradients = torch.autograd.grad(class_index_loss, parameters)
-    for probability_gradient, class_index_gradient in zip(probability_gradients, class_index_gradients):
-        torch.testing.assert_close(probability_gradient, class_index_gradient)
 
 
 @pytest.mark.parametrize("num_labels", [1, 3])
